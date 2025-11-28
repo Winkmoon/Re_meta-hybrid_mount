@@ -1,0 +1,25 @@
+/* Simple log view styling */
+.log-card {
+  background-color: var(--md-sys-color-surface-container);
+  border-radius: 16px;
+  overflow: hidden;
+  height: calc(100vh - 180px); /* Leave room for header/tabs */
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--md-sys-elevation-1);
+}
+
+.log-content {
+  margin: 0;
+  padding: 16px;
+  font-family: var(--md-ref-typeface-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--md-sys-color-on-surface);
+  background-color: #1e1e1e; /* Dark background for logs usually looks better */
+  color: #e0e0e0;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  flex: 1;
+}
