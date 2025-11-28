@@ -124,12 +124,17 @@ EOF_CONFIG
     const cmd = `
       MOD_DIR="${moduleDir}"
       [ -d "$MOD_DIR" ] || exit 0
+      modules=$(/data/adb/modules/magic_mount_rs/meta-mm scan)
       for m in "$MOD_DIR"/*; do
         [ -d "$m" ] || continue
         # Basic check if it's a module
         [ -f "$m/module.prop" ] || continue
         
         name=$(basename "$m")
+        
+        if ! echo "$modules" | grep -q "^$name$"; then
+          continue
+        fi
         
         # Read props roughly
         prop_name=$(grep "^name=" "$m/module.prop" | cut -d= -f2-)
