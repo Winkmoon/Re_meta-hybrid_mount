@@ -1,11 +1,9 @@
 use std::{
     fs::{create_dir_all, read_to_string, remove_dir_all, remove_file, write},
-    io::Write,
     path::{Path, PathBuf},
 };
 
 use anyhow::{Context, Result, bail};
-use env_logger::Builder;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use extattr::{Flags as XattrFlags, lsetxattr};
 
@@ -50,31 +48,6 @@ pub fn ensure_dir_exists<T: AsRef<Path>>(dir: T) -> Result<()> {
     } else {
         bail!("{} is not a regular directory", dir.as_ref().display())
     }
-}
-
-pub fn init_logger(verbose: bool) -> Result<()> {
-    let level = if verbose {
-        log::LevelFilter::Debug
-    } else {
-        log::LevelFilter::Info
-    };
-
-    let mut builder = Builder::new();
-
-    builder.format(|buf, record| {
-        writeln!(
-            buf,
-            "[{}] [{}] {}",
-            record.level(),
-            record.target(),
-            record.args()
-        )
-    });
-    builder.filter_level(level).init();
-
-    log::info!("log level: {}", level.as_str());
-
-    Ok(())
 }
 
 fn is_writable_tmpfs(path: &Path) -> bool {

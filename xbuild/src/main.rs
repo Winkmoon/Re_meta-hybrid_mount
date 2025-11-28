@@ -43,7 +43,7 @@ fn main() -> Result<()> {
         &dir::CopyOptions::new().overwrite(true).content_only(true),
     )
     .unwrap();
-    
+
     if temp_dir.join(".gitignore").exists() {
         fs::remove_file(temp_dir.join(".gitignore")).unwrap();
     }

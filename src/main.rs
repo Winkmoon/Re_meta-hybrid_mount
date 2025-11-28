@@ -2,8 +2,11 @@ mod config;
 mod magic_mount;
 mod utils;
 
+use std::io::Write;
+
 use anyhow::{Context, Result};
 use config::{CONFIG_FILE_DEFAULT, Config};
+use env_logger::Builder;
 
 use crate::magic_mount::UMOUNT;
 
@@ -22,12 +25,37 @@ fn load_config() -> Result<Config> {
     Ok(Config::default())
 }
 
+fn init_logger(verbose: bool) -> Result<()> {
+    let level = if verbose {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Info
+    };
+
+    let mut builder = Builder::new();
+
+    builder.format(|buf, record| {
+        writeln!(
+            buf,
+            "[{}] [{}] {}",
+            record.level(),
+            record.target(),
+            record.args()
+        )
+    });
+    builder.filter_level(level).init();
+
+    log::info!("log level: {}", level.as_str());
+
+    Ok(())
+}
+
 fn main() -> Result<()> {
     // 加载配置
     let config = load_config()?;
 
     // 初始化日志
-    utils::init_logger(config.verbose)?;
+    init_logger(config.verbose)?;
 
     log::info!("Magic Mount Starting");
     log::info!("module dir      : {}", config.moduledir.display());

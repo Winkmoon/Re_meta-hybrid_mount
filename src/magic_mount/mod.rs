@@ -26,7 +26,6 @@ use crate::{
     utils::{ensure_dir_exists, lgetfilecon, lsetfilecon},
 };
 
-
 pub(super) const DISABLE_FILE_NAME: &str = "disable";
 pub(super) const REMOVE_FILE_NAME: &str = "remove";
 pub(super) const SKIP_MOUNT_FILE_NAME: &str = "skip_mount";
