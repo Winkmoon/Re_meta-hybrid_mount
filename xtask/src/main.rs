@@ -26,8 +26,10 @@ struct CargoConfig {
 #[derive(Serialize)]
 struct UpdateJson {
     verion: String,
-    versionCode: usize,
-    zipUrl: String,
+    #[serde(rename = "versionCode")]
+    versioncode: usize,
+    #[serde(rename = "zipUrl")]
+    zipurl: String,
     changelog: String,
 }
 
@@ -75,9 +77,9 @@ fn update() -> Result<()> {
     build()?;
 
     let json = UpdateJson {
-        versionCode: cal_version_code(&data.package.version)?,
+        versioncode: cal_version_code(&data.package.version)?,
         verion: data.package.version.clone(),
-        zipUrl: format!(
+        zipurl: format!(
             "https://github.com/Tools-cx-app/meta-magic_mount/releases/download/v{}/magic_mount_rs.zip",
             data.package.version.clone()
         ),
