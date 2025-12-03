@@ -94,7 +94,10 @@ fn print_tree(
     };
 
     // Source path info
-    let source_str = node.module_path.as_ref().map_or_else(String::new, |p| format!(" -> {}", p.display()));
+    let source_str = node
+        .module_path
+        .as_ref()
+        .map_or_else(String::new, |p| format!(" -> {}", p.display()));
 
     // Line format: ├── name [TYPE] [FLAGS] -> /path
     writeln!(
