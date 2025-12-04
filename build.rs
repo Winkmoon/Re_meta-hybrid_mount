@@ -5,16 +5,16 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct Package {
-    pub authors: Vec<String>,
-    pub name: String,
-    pub version: String,
-    pub description: String,
+    authors: Vec<String>,
+    name: String,
+    version: String,
+    description: String,
     metadata: Metadata,
 }
 
 #[derive(Deserialize)]
 struct CargoConfig {
-    pub package: Package,
+    package: Package,
 }
 
 #[derive(Deserialize)]
