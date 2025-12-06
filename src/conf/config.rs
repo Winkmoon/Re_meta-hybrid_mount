@@ -29,6 +29,9 @@ pub struct Config {
 
     #[serde(default)]
     pub disable_umount: bool,
+
+    #[serde(skip)]
+    pub dry_run: bool,
 }
 
 fn default_moduledir() -> PathBuf {
@@ -71,6 +74,7 @@ impl Default for Config {
             force_ext4: false,
             enable_nuke: false,
             disable_umount: false,
+            dry_run: false,
         }
     }
 }
@@ -102,12 +106,14 @@ impl Config {
         mountsource: Option<String>,
         verbose: bool,
         partitions: Vec<String>,
+        dry_run: bool,
     ) {
         if let Some(dir) = moduledir { self.moduledir = dir; }
         if tempdir.is_some() { self.tempdir = tempdir; }
         if let Some(source) = mountsource { self.mountsource = source; }
         if verbose { self.verbose = true; }
         if !partitions.is_empty() { self.partitions = partitions; }
+        if dry_run { self.dry_run = true; }
     }
 }
 

@@ -17,6 +17,8 @@ pub struct Cli {
     pub verbose: bool,
     #[arg(short = 'p', long = "partitions", value_delimiter = ',')]
     pub partitions: Vec<String>,
+    #[arg(long = "dry-run")]
+    pub dry_run: bool,
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
