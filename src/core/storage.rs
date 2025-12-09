@@ -5,8 +5,8 @@ use std::process::Command;
 use std::ffi::CString;
 
 use anyhow::{Context, Result, bail};
-use rustix::fs::{Mode, MountFlags, CStringExt};
-use rustix::mount::{mount, umount, UnmountFlags};
+use rustix::fs::Mode;
+use rustix::mount::{mount, unmount, UnmountFlags, MountFlags};
 use serde::Serialize;
 
 use crate::{defs, utils, mount::hymofs::HymoFs};
@@ -31,7 +31,7 @@ struct StorageStatus {
 
 pub fn setup(mnt_base: &Path, img_path: &Path, force_ext4: bool) -> Result<StorageHandle> {
     if utils::is_mounted(mnt_base) {
-        let _ = umount(mnt_base, UnmountFlags::DETACH);
+        let _ = unmount(mnt_base, UnmountFlags::DETACH);
     }
     fs::create_dir_all(mnt_base)?;
 
@@ -49,11 +49,11 @@ pub fn setup(mnt_base: &Path, img_path: &Path, force_ext4: bool) -> Result<Stora
 
 fn try_setup_tmpfs(target: &Path) -> Result<bool> {
     match mount(
-        Some(unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"tmpfs\0") }),
+        unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"tmpfs\0") },
         target,
-        Some(unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"tmpfs\0") }),
+        unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"tmpfs\0") },
         MountFlags::empty(),
-        Some(unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"mode=0755\0") }),
+        unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"mode=0755\0") },
     ) {
         Ok(_) => {},
         Err(_) => return Ok(false),
@@ -62,7 +62,7 @@ fn try_setup_tmpfs(target: &Path) -> Result<bool> {
     if is_xattr_supported(target) {
         Ok(true)
     } else {
-        let _ = umount(target, UnmountFlags::DETACH);
+        let _ = unmount(target, UnmountFlags::DETACH);
         Ok(false)
     }
 }
@@ -151,7 +151,7 @@ fn create_image(path: &Path) -> Result<()> {
 }
 
 pub fn finalize_storage_permissions(target: &Path) {
-    if let Err(e) = rustix::fs::chmod(target, Mode::from_raw(0o755)) {
+    if let Err(e) = rustix::fs::chmod(target, Mode::from(0o755)) {
         log::warn!("Failed to chmod storage root: {}", e);
     }
 

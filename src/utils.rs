@@ -184,10 +184,27 @@ pub fn is_xattr_supported(path: &Path) -> bool {
     supported
 }
 
+pub fn is_mounted<P: AsRef<Path>>(path: P) -> bool {
+    let path_str = path.as_ref().to_string_lossy();
+    let search = path_str.trim_end_matches('/');
+    
+    if let Ok(content) = fs::read_to_string("/proc/mounts") {
+        for line in content.lines() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() > 1 {
+                if parts[1] == search {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
 pub fn mount_tmpfs(target: &Path) -> Result<()> {
     ensure_dir_exists(target)?;
     let data = CString::new("mode=0755")?;
-    mount("tmpfs", target, "tmpfs", MountFlags::empty(), Some(data.as_c_str()))
+    mount("tmpfs", target, "tmpfs", MountFlags::empty(), data.as_c_str())
         .context("Failed to mount tmpfs")?;
     Ok(())
 }

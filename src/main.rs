@@ -170,7 +170,8 @@ fn run() -> Result<()> {
         &storage_handle.mode, 
         nuke_active, 
         exec_result.overlay_module_ids.len(), 
-        exec_result.magic_module_ids.len()
+        exec_result.magic_module_ids.len(),
+        exec_result.hymo_module_ids.len()
     );
 
     let state = RuntimeState::new(
