@@ -124,7 +124,7 @@
           </div>
         </div>
         <div class="tile-bottom">
-          <span class="tile-label">{store.L.config.umountOn || 'Disable Unmount'}</span>
+          <span class="tile-label">{store.L.config.umountLabel}</span>
         </div>
       </button>
     </div>
