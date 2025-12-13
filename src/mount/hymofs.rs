@@ -3,7 +3,7 @@ use std::ffi::{CStr, CString};
 use std::fs::{File, OpenOptions};
 use std::os::unix::fs::{FileTypeExt, MetadataExt};
 use std::os::unix::io::AsRawFd;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use anyhow::{Context, Result};
 use log::{debug, warn};
 use walkdir::WalkDir;
@@ -63,9 +63,10 @@ macro_rules! _IOWR {
 struct HymoIoctlArg {
     src: *const libc::c_char,
     target: *const libc::c_char,
-    r#type: u8,
+    r#type: libc::c_int,
 }
 
+#[allow(dead_code)]
 #[repr(C)]
 struct HymoIoctlListArg {
     buf: *mut libc::c_char,
@@ -73,14 +74,17 @@ struct HymoIoctlListArg {
 }
 
 fn ioc_add_rule() -> libc::c_int { _IOW!(HYMO_IOC_MAGIC as u32, 1, HymoIoctlArg) as libc::c_int }
+#[allow(dead_code)]
 fn ioc_del_rule() -> libc::c_int { _IOW!(HYMO_IOC_MAGIC as u32, 2, HymoIoctlArg) as libc::c_int }
 fn ioc_hide_rule() -> libc::c_int { _IOW!(HYMO_IOC_MAGIC as u32, 3, HymoIoctlArg) as libc::c_int }
 fn ioc_inject_rule() -> libc::c_int { _IOW!(HYMO_IOC_MAGIC as u32, 4, HymoIoctlArg) as libc::c_int }
 fn ioc_clear_all() -> libc::c_int { _IO!(HYMO_IOC_MAGIC as u32, 5) as libc::c_int }
 fn ioc_get_version() -> libc::c_int { _IOR!(HYMO_IOC_MAGIC as u32, 6, libc::c_int) as libc::c_int }
+#[allow(dead_code)]
 fn ioc_list_rules() -> libc::c_int { _IOWR!(HYMO_IOC_MAGIC as u32, 7, HymoIoctlListArg) as libc::c_int }
 
 #[derive(Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum HymoFsStatus {
     Available,
     NotPresent,
@@ -145,7 +149,7 @@ impl HymoFs {
         let arg = HymoIoctlArg {
             src: c_src.as_ptr(),
             target: c_target.as_ptr(),
-            r#type: type_val as u8,
+            r#type: type_val as libc::c_int,
         };
 
         let ret = unsafe {
@@ -159,6 +163,7 @@ impl HymoFs {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn delete_rule(src: &str) -> Result<()> {
         debug!("HymoFS: DEL_RULE src='{}'", src);
         let file = Self::open_dev()?;
@@ -225,6 +230,7 @@ impl HymoFs {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn list_active_rules() -> Result<String> {
         let file = Self::open_dev()?;
         let capacity = 128 * 1024;
@@ -316,6 +322,7 @@ impl HymoFs {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn delete_directory_rules(target_base: &Path, module_dir: &Path) -> Result<()> {
         if !module_dir.exists() || !module_dir.is_dir() {
             return Ok(());
