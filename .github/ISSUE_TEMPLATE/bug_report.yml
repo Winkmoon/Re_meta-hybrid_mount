@@ -19,6 +19,24 @@ body:
       required: true
 
   - type: input
+    id: device_codename
+    attributes:
+      label: Device Codename / 设备代号
+      description: e.g., "lmi" / 例如 "lmi"
+      placeholder: lmi
+    validations:
+      required: false
+
+  - type: input
+    id: android_build
+    attributes:
+      label: Android Build Fingerprint / Android 构建指纹 (optional)
+      description: adb shell getprop ro.build.fingerprint
+      placeholder: google/sailfish/sailfish:11/RP1A.201005.006/...
+    validations:
+      required: false
+
+  - type: input
     id: kernel
     attributes:
       label: Kernel Version / 内核版本
@@ -26,6 +44,15 @@ body:
       placeholder: 5.15.100-android14-11-g123456...
     validations:
       required: true
+
+  - type: input
+    id: daemon_version
+    attributes:
+      label: Hybrid Mount Daemon Version / 模块守护进程版本 (if available)
+      description: WebUI footer or module package version
+      placeholder: v1.0.2-r1
+    validations:
+      required: false
 
   - type: dropdown
     id: ksu_type
@@ -38,6 +65,15 @@ body:
         - "Other / 其它"
     validations:
       required: true
+
+  - type: input
+    id: ksu_manager_version
+    attributes:
+      label: KernelSU / Root Manager Version / KernelSU 管理器版本
+      description: Version shown in manager app (if applicable)
+      placeholder: KernelSU Manager v2.3.4
+    validations:
+      required: false
 
   - type: dropdown
     id: susfs
@@ -61,29 +97,71 @@ body:
       required: true
 
   - type: textarea
-    id: description
+    id: other_modules
     attributes:
-      label: Issue Description / 问题描述
-      description: A clear and concise description of what the bug is. / 请清晰简洁地描述出现的问题。
+      label: Other Enabled Modules / 其他已启用模块 (optional)
+      description: List other Magisk/Kernel modules or relevant patches that are enabled. 列出其他已启用的 Magisk/Kernel 模块或补丁（可选）
       placeholder: |
-        When I enabled module X, the system bootlooped...
-        当我也启用了模块 X 时，系统发生了无限重启...
+        - module-a vX.Y
+        - module-b vA.B
+    validations:
+      required: false
+
+  - type: dropdown
+    id: can_reproduce
+    attributes:
+      label: Can you reproduce this issue? / 是否可复现？
+      options:
+        - "Always / 总是"
+        - "Sometimes / 偶尔"
+        - "Only once / 仅发生一次"
+        - "Unknown / 不清楚"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity / 严重程度
+      options:
+        - "Critical (bootloop / data loss) / 严重（无限重启 / 数据丢失）"
+        - "High (major functionality broken) / 高（主要功能不可用）"
+        - "Medium (minor issues) / 中（次要问题）"
+        - "Low (cosmetic / info) / 低（外观/信息）"
     validations:
       required: true
 
   - type: textarea
-    id: Reproduce
+    id: actual_behavior
     attributes:
-      label: Issue Reproduce / 问题复现
-      description: Describe how to reproduce the issue. / 描述如何复现该问题。
+      label: Actual Behavior / 实际行为
+      description: What actually happened. 请描述实际发生的情况。
+      placeholder: |
+        System bootloop after installing module X...
+        安装模块 X 后系统进入无限重启...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior / 期望行为
+      description: What you expected to happen. 您期望发生什么。
+      placeholder: |
+        Module should mount /data without conflicts...
+        模块应当在不冲突的情况下挂载 /data...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce_steps
+    attributes:
+      label: Steps to Reproduce / 问题复现步骤
+      description: Describe step-by-step how to reproduce. Include exact commands and timestamps where possible. / 请尽量一步步描述，包含精确命令和时间点（如果有）。
       placeholder: |
         1. Install module X
-        2. Reboot the device
-        3. Observe the bootloop
-        
-        1. 安装模块 X
-        2. 重启设备
-        3. 观察到无限重启
+        2. Reboot device
+        3. Observe bootloop
     validations:
       required: true
 
@@ -92,38 +170,61 @@ body:
     attributes:
       label: Verbose Hybrid Mount Log / 详细运行日志
       description: |
-        **CRITICAL / 重要**: 
-        1. Go to WebUI -> Config, enable **"Verbose Log"** and click Save.
-        2. Reboot or reproduce the issue.
-        3. Paste the content of `/data/adb/meta-hybrid/daemon.log` here.
+        CRITICAL / 重要:
+        1) In WebUI -> Config enable **"Verbose Log"** and Save.
+        2) Reproduce the issue.
+        3) Paste the content of `/data/adb/meta-hybrid/daemon.log` here OR attach it as a file below.
+        4) If possible, also include kernel messages: `adb logcat -b kernel` or output of `dmesg`.
         
-        1. 请先在 WebUI -> Config (配置) 中开启 **"Verbose Log" (详细日志)** 并保存。
-        2. 重启或复现问题。
-        3. 将 `/data/adb/meta-hybrid/daemon.log` 的内容粘贴在下方。
+        If the log is extremely long, paste the most relevant time window (±1 minute around the failure) and attach the full log file.
+        
+        中文提示：
+        1）在 WebUI -> 配置 中开启 **"详细日志"** 并保存。
+        2）复现问题后，粘贴 `/data/adb/meta-hybrid/daemon.log` 或作为附件上传。
+        3）如果可行，请同时提供内核日志：`adb logcat -b kernel` 或 `dmesg` 输出。
       render: shell
     validations:
       required: true
 
+  - type: textarea
+    id: extra_info
+    attributes:
+      label: Additional Info / 额外信息 (optional)
+      description: Any relevant info such as SELinux status (enforcing/permissive), encrypted storage, recovery installed, bootloader state, etc.
+      placeholder: |
+        - SELinux: enforcing
+        - Data encrypted: yes
+        - Recovery: TWRP 3.7.0
+    validations:
+      required: false
+
   - type: markdown
     attributes:
       value: |
-        ### Attachments / 附件
+        ### Attachments / 附件（请尽量提供）
         
-        **Please upload the following files by dragging and dropping them into the text area below:**
-        **请将以下文件拖拽到下方的文本框中上传：**
+        Please upload the following files by dragging and dropping them into the text area below:
+        请将以下文件拖拽到下方的文本框中上传：
         
-        1. **KernelSU Bugreport** (Required/必须): 
+        1. KernelSU Bugreport (Required/必须): 
            - Generate via KernelSU Manager -> Settings -> Bug Report.
            - 请通过 KernelSU 管理器 -> 设置 -> 调试报告 生成。
            
-        2. **Problematic Module Sample** (Required/必须):
+        2. Problematic Module Sample (Required if applicable/如果适用请上传): 
            - The module `.zip` file that caused the issue.
            - 导致问题的模块 `.zip` 安装包。
+        
+        3. Full daemon.log, dmesg or kernel log (if too long to paste).
+           - 如果日志过长无法粘贴，请上传完整文件并在上方粘贴关键时间窗口。
+        
+        Privacy note / 隐私提示:
+        - Please review logs for personal data before posting. Remove device-specific keys or tokens.
+        - 发布日志前请审查并移除敏感数据（如密钥、账号信息等）。
 
   - type: textarea
     id: attachments
     attributes:
       label: Upload Area / 上传区域
-      description: Drag & drop your KernelSU bugreport and module zip here. / 请将 KernelSU 调试报告和模块包拖拽至此处。
+      description: Drag & drop your KernelSU bugreport and module zip here. / 请将 KernelSU 调试报告和模块包拖拽至此处，或粘贴附件链接。
     validations:
       required: true
