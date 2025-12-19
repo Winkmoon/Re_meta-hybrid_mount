@@ -201,7 +201,6 @@ fn main() -> Result<()> {
     let mut config = load_config(&cli)?;
     config.merge_with_cli(
         cli.moduledir.clone(), 
-        cli.tempdir.clone(), 
         cli.mountsource.clone(), 
         cli.verbose, 
         cli.partitions.clone(), 

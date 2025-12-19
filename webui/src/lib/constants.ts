@@ -3,7 +3,6 @@ import type { AppConfig } from './types';
 
 export const DEFAULT_CONFIG: AppConfig = {
   moduledir: '/data/adb/modules',
-  tempdir: '',
   mountsource: 'KSU',
   logfile: RUST_PATHS.DAEMON_LOG || '/data/adb/meta-hybrid/daemon.log',
   verbose: false,

@@ -16,9 +16,10 @@
 
   let initialConfigStr = $state('');
   let showResetConfirm = $state(false);
+  
   const isValidPath = (p: string) => !p || (p.startsWith('/') && p.length > 1);
   let invalidModuleDir = $derived(!isValidPath(store.config.moduledir));
-  let invalidTempDir = $derived(store.config.tempdir && !isValidPath(store.config.tempdir));
+  
   let isDirty = $derived.by(() => {
     if (!initialConfigStr) return false;
     return JSON.stringify(store.config) !== initialConfigStr;
@@ -41,7 +42,7 @@
   });
 
   function save() {
-    if (invalidModuleDir || invalidTempDir) {
+    if (invalidModuleDir) {
       store.showToast(store.L.config.invalidPath, "error");
       return;
     }
@@ -61,10 +62,6 @@
     store.resetConfig().then(() => {
         initialConfigStr = JSON.stringify(store.config);
     });
-  }
-
-  function clearField(key: keyof typeof store.config) {
-     if (key === 'tempdir') store.config.tempdir = "";
   }
 
   function toggle(key: keyof typeof store.config) {
@@ -143,36 +140,22 @@
     <div class="config-card">
       <div class="card-header">
         <div class="card-icon">
-          <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.timer} /></svg></md-icon>
+          <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.ksu} /></svg></md-icon>
         </div>
         <div class="card-text">
-          <span class="card-title">{store.L.config.tempDir}</span>
-          <span class="card-desc">{store.L.config?.tempDirDesc ?? 'Set the temporary directory for Magic Mount'}</span>
+          <span class="card-title">{store.L.config.mountSource}</span>
+          <span class="card-desc">{store.L.config?.mountSourceDesc ?? 'Global mount source namespace (e.g. KSU)'}</span>
         </div>
       </div>
       
       <div class="input-stack">
         <md-outlined-text-field 
-          label={store.L.config.tempDir} 
-          value={store.config.tempdir}
-          oninput={(e) => handleInput('tempdir', e.target.value)}
-          placeholder={store.L.config.autoPlaceholder}
-          error={invalidTempDir}
-          supporting-text={invalidTempDir ? (store.L.config?.invalidTempDir || "Invalid Path") : ""}
+          label={store.L.config.mountSource} 
+          value={store.config.mountsource}
+          oninput={(e) => handleInput('mountsource', e.target.value)}
           class="full-width-field"
         >
-          <md-icon slot="leading-icon"><svg viewBox="0 0 24 24"><path d={ICONS.timer} /></svg></md-icon>
-          {#if store.config.tempdir}
-            <md-icon-button 
-                slot="trailing-icon" 
-                onclick={() => clearField('tempdir')}
-                role="button"
-                tabindex="0"
-                onkeydown={() => {}}
-            >
-              <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.close} /></svg></md-icon>
-            </md-icon-button>
-          {/if}
+          <md-icon slot="leading-icon"><svg viewBox="0 0 24 24"><path d={ICONS.ksu} /></svg></md-icon>
         </md-outlined-text-field>
       </div>
     </div>
@@ -197,18 +180,6 @@
 
   <section class="config-group">
     <div class="options-grid">
-      <div class="option-tile static-input">
-        <div class="tile-top">
-          <div class="tile-icon neutral">
-            <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.ksu} /></svg></md-icon>
-          </div>
-        </div>
-        <div class="tile-bottom">
-          <span class="tile-label">{store.L.config.mountSource}</span>
-          <input class="tile-input-overlay" type="text" bind:value={store.config.mountsource} />
-        </div>
-      </div>
-
       <button 
         class="option-tile clickable secondary" 
         class:active={store.config.force_ext4} 

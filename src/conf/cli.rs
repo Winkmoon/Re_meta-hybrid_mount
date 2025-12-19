@@ -9,8 +9,6 @@ pub struct Cli {
     pub config: Option<PathBuf>,
     #[arg(short = 'm', long = "moduledir")]
     pub moduledir: Option<PathBuf>,
-    #[arg(short = 't', long = "tempdir")]
-    pub tempdir: Option<PathBuf>,
     #[arg(short = 's', long = "mountsource")]
     pub mountsource: Option<String>,
     #[arg(short = 'v', long = "verbose")]

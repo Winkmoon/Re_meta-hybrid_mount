@@ -1,6 +1,5 @@
 export interface AppConfig {
   moduledir: string;
-  tempdir: string;
   mountsource: string;
   verbose: boolean;
   partitions: string[];

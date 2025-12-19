@@ -217,11 +217,7 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
     let mut final_magic_ids = Vec::new();
 
     if !magic_queue.is_empty() {
-        let (tempdir, needs_mount) = if let Some(t) = &config.tempdir { 
-            (t.clone(), false)
-        } else { 
-            (utils::select_temp_dir()?, true)
-        };
+        let tempdir = utils::select_temp_dir()?;
 
         for path in &magic_queue {
             if let Some(name) = path.file_name() {
@@ -229,16 +225,12 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
             }
         }
         
-        log::info!(">> Phase 3: Magic Mount (Fallback) using {} (tmpfs_overlay={})", tempdir.display(), needs_mount);
+        log::info!(">> Phase 3: Magic Mount (Fallback) using {}", tempdir.display());
         
-        if needs_mount {
-            if !tempdir.exists() {
-                std::fs::create_dir_all(&tempdir)?;
-            }
-            utils::mount_tmpfs(&tempdir, "tmpfs")?;
-        } else {
-            utils::ensure_temp_dir(&tempdir)?;
+        if !tempdir.exists() {
+            std::fs::create_dir_all(&tempdir)?;
         }
+        utils::mount_tmpfs(&tempdir, "tmpfs")?;
 
         if let Err(e) = magic::mount_partitions(
             &tempdir, 
@@ -252,11 +244,7 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
             final_magic_ids.clear();
         }
 
-        if needs_mount {
-            let _ = rustix::mount::unmount(&tempdir, UnmountFlags::DETACH);
-        } else {
-            utils::cleanup_temp_dir(&tempdir);
-        }
+        let _ = rustix::mount::unmount(&tempdir, UnmountFlags::DETACH);
     }
 
     let mut result_overlay = final_overlay_ids.into_iter().collect::<Vec<_>>();
