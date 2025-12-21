@@ -49,25 +49,17 @@ jobs:
           cache: 'npm'
           cache-dependency-path: webui/package-lock.json
 
-      - name: Check Code Quality
+      - name: Check Code Quality (Clippy)
         run: |
           cargo clippy --workspace --all-targets --all-features -- -D warnings
 
       - name: Configure Version
         run: |
-          # Ensure tags are fetched for git describe
           git fetch --tags
           
-          # Get the latest tag, default to v0.0.0 if none
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          
-          # Get short commit hash
           COMMIT_ID=$(git rev-parse --short HEAD)
-          
-          # Construct version string: Tag-CommitID
           CI_VER="${LATEST_TAG}-${COMMIT_ID}"
-          
-          # CI always uses version code 0
           CI_CODE=0
           
           echo "META_HYBRID_VERSION=$CI_VER" >> $GITHUB_ENV
@@ -75,7 +67,6 @@ jobs:
           
           echo "Building Version: $CI_VER (Code: $CI_CODE)"
           
-          # Explicitly update module.prop to ensure the built zip contains correct info
           sed -i "s/^version=.*/version=$CI_VER/" module/module.prop
           sed -i "s/^versionCode=.*/versionCode=$CI_CODE/" module/module.prop
 
@@ -83,14 +74,27 @@ jobs:
         run: |
           cargo run -p xtask -- build --release
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python Dependencies
+        run: |
+          pip install requests
+
+      - name: Notify Telegram (CI)
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python3 scripts/tg_notify.py "37" "Daily Tilling/日常耕作"
+
       - name: Prepare Artifact
         run: |
-          # Solve double compression: Unzip the build output to a folder
-          # GitHub upload-artifact will zip this folder, resulting in a single flashable zip
           mkdir -p output/artifact_content
           unzip output/*.zip -d output/artifact_content
-          
-          # Remove the original zip to save space/confusion
           rm output/*.zip
 
       - name: Upload Artifact

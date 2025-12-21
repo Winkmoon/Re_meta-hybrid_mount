@@ -64,10 +64,8 @@ jobs:
 
       - name: Update Version Numbers
         run: |
-          # Simplify version determination logic
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             TAG_NAME="${{ github.event.inputs.version_name }}"
-            # Use input version code or fallback to run number
             VERSION_CODE="${{ github.event.inputs.version_code }}"
             [[ -z "$VERSION_CODE" ]] && VERSION_CODE="${{ github.run_number }}"
           else
@@ -80,16 +78,30 @@ jobs:
           
           echo "Bumping to $TAG_NAME ($VERSION_CODE)"
           
-          # Update module.prop
           sed -i "s/^version=.*/version=$TAG_NAME/" module/module.prop
           sed -i "s/^versionCode=.*/versionCode=$VERSION_CODE/" module/module.prop
           
-          # Update Cargo.toml (strip 'v' prefix)
           sed -i "0,/^version = .*/s//version = \"${TAG_NAME#v}\"/" Cargo.toml
 
       - name: Build Release Package
         run: |
           cargo run -p xtask -- build --release
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python Dependencies
+        run: |
+          pip install requests
+
+      - name: Notify Telegram (Release)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python3 scripts/tg_notify.py "6" "Harvest/丰收"
 
       - name: Generate Changelog
         id: meta
@@ -151,7 +163,6 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Ensure we are on branch to push
           git fetch origin master
           git checkout master
           
@@ -161,7 +172,6 @@ jobs:
           git add update.json changelog.md
           git add module/module.prop Cargo.toml
           
-          # Only commit if there are changes
           if ! git diff --staged --quiet; then
             git commit -m "chore(release): bump version to ${{ env.META_HYBRID_VERSION }} [skip ci]"
             git push origin master
