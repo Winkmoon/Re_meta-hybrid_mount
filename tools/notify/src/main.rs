@@ -1,3 +1,4 @@
+use reqwest::blocking::{Client, multipart};
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -30,11 +31,7 @@ fn main() {
             let path = entry.path();
             if let Some(ext) = path.extension() {
                 if ext == "zip" {
-                    if let Ok(abs_path) = fs::canonicalize(&path) {
-                        zip_file = Some(abs_path);
-                    } else {
-                        zip_file = Some(path);
-                    }
+                    zip_file = Some(path);
                     break;
                 }
             }
@@ -49,19 +46,10 @@ fn main() {
         }
     };
 
-    let parent_dir = file_path.parent().expect("Failed to get parent dir");
     let file_name = file_path.file_name().unwrap().to_string_lossy().to_string();
     let file_size = fs::metadata(&file_path).map(|m| m.len()).unwrap_or(0) as f64 / 1024.0 / 1024.0;
 
     println!("Selecting yield: {} ({:.2} MB)", file_name, file_size);
-    println!("Debug: Working Directory will be: {}", parent_dir.display());
-    println!("Debug: Target Filename is: {}", file_name);
-    println!("Debug: Checking file existence via 'ls -la'...");
-    let _ = Command::new("ls")
-        .arg("-la")
-        .arg(&file_name)
-        .current_dir(parent_dir)
-        .status();
 
     let commit_msg = get_git_commit_message();
     let safe_commit_msg = escape_html(&commit_msg);
@@ -75,67 +63,84 @@ fn main() {
         event_label, file_size, safe_commit_msg, run_url
     );
 
-    let url = format!("https://api.telegram.org/bot{}/sendDocument", bot_token);
-
-    // 关键修改：只传递文件名，不传递路径
-    let mut curl_args = vec![
-        "-F".to_string(),
-        format!("chat_id={}", chat_id),
-        "-F".to_string(),
-        format!("document=@{}", file_name), // 这里只传文件名
-        "-F".to_string(),
-        format!("caption={}", caption),
-        "-F".to_string(),
-        "parse_mode=HTML".to_string(),
-        url.clone(),
-    ];
-
-    if let Some(tid) = topic_id {
-        if !tid.trim().is_empty() && tid != "0" {
-            curl_args.insert(0, format!("message_thread_id={}", tid));
-            curl_args.insert(0, "-F".to_string());
-            println!("Targeting Topic ID: {}", tid);
-        }
-    }
-
     println!("Dispatching yield to Granary (Telegram)...");
+
+    let client = Client::builder()
+        .timeout(Duration::from_secs(120))
+        .build()
+        .expect("Failed to build HTTP client");
 
     let max_retries = 2;
     for attempt in 0..max_retries {
-        let (success, response) = run_curl(&curl_args, parent_dir);
+        let mut form = multipart::Form::new()
+            .text("chat_id", chat_id.clone())
+            .text("caption", caption.clone())
+            .text("parse_mode", "HTML");
 
-        if success && response.contains("\"ok\":true") {
-            println!("✅ Yield stored successfully!");
-            return;
-        }
-
-        if response.contains("\"ok\":false") {
-            println!("⚠️ Telegram API rejected: {}", response);
-        }
-
-        if response.contains("\"error_code\":400") && response.contains("TOPIC_CLOSED") {
-            if attempt < max_retries - 1 {
-                if let Some(tid) = topic_id {
-                    if reopen_topic(&bot_token, &chat_id, tid) {
-                        println!("🔄 Retrying upload in 2 seconds...");
-                        thread::sleep(Duration::from_secs(2));
-                        continue;
-                    } else {
-                        eprintln!("❌ Could not reopen topic. Aborting.");
-                        exit(1);
-                    }
+        if let Some(tid) = topic_id {
+            if !tid.trim().is_empty() && tid != "0" {
+                form = form.text("message_thread_id", tid.to_string());
+                if attempt == 0 {
+                    println!("Targeting Topic ID: {}", tid);
                 }
-            } else {
-                eprintln!("❌ Retries exhausted.");
             }
         }
 
-        eprintln!(
-            "❌ Storage failed (Attempt {}/{}): {}",
-            attempt + 1,
-            max_retries,
-            response
-        );
+        match form.file("document", &file_path) {
+            Ok(f) => form = f,
+            Err(e) => {
+                eprintln!("❌ Critical Error reading file: {}", e);
+                exit(1);
+            }
+        };
+
+        let url = format!("https://api.telegram.org/bot{}/sendDocument", bot_token);
+
+        match client.post(&url).multipart(form).send() {
+            Ok(resp) => {
+                let status = resp.status();
+                let text = resp.text().unwrap_or_default();
+
+                if status.is_success() {
+                    println!("✅ Yield stored successfully!");
+                    return;
+                }
+
+                if text.contains("TOPIC_CLOSED") {
+                    if attempt < max_retries - 1 {
+                        if let Some(tid) = topic_id {
+                            if reopen_topic(&client, &bot_token, &chat_id, tid) {
+                                println!("🔄 Retrying upload in 2 seconds...");
+                                thread::sleep(Duration::from_secs(2));
+                                continue;
+                            } else {
+                                eprintln!("❌ Could not reopen topic. Aborting.");
+                                exit(1);
+                            }
+                        }
+                    } else {
+                        eprintln!("❌ Retries exhausted.");
+                    }
+                }
+
+                eprintln!(
+                    "❌ Storage failed (Attempt {}/{}): Status {} - {}",
+                    attempt + 1,
+                    max_retries,
+                    status,
+                    text
+                );
+            }
+            Err(e) => {
+                eprintln!(
+                    "❌ Network error (Attempt {}/{}): {}",
+                    attempt + 1,
+                    max_retries,
+                    e
+                );
+            }
+        }
+
         if attempt == max_retries - 1 {
             exit(1);
         }
@@ -154,54 +159,36 @@ fn get_git_commit_message() -> String {
     }
 }
 
-fn run_curl(args: &[String], working_dir: &std::path::Path) -> (bool, String) {
-    match Command::new("curl")
-        .current_dir(working_dir)
-        .args(["-s", "-S"])
-        .args(args)
-        .output()
-    {
-        Ok(output) => {
-            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-
-            if output.status.success() {
-                (true, stdout)
-            } else {
-                let err_msg = if !stderr.is_empty() { stderr } else { stdout };
-                (false, err_msg)
-            }
-        }
-        Err(e) => (false, e.to_string()),
-    }
-}
-
-fn reopen_topic(bot_token: &str, chat_id: &str, topic_id: &str) -> bool {
+fn reopen_topic(client: &Client, bot_token: &str, chat_id: &str, topic_id: &str) -> bool {
+    println!("⚠️ Topic {} is closed. Attempting to reopen...", topic_id);
     let url = format!("https://api.telegram.org/bot{}/reopenForumTopic", bot_token);
-    let data = format!(
+    let json_body = format!(
         r#"{{"chat_id": "{}", "message_thread_id": {}}}"#,
         chat_id, topic_id
     );
 
-    println!("⚠️ Topic {} is closed. Attempting to reopen...", topic_id);
-
-    let args = vec![
-        "-H".to_string(),
-        "Content-Type: application/json".to_string(),
-        "-d".to_string(),
-        data,
-        "-X".to_string(),
-        "POST".to_string(),
-        url,
-    ];
-    let (success, response) = run_curl(&args, &env::current_dir().unwrap());
-
-    if success && response.contains("\"ok\":true") {
-        println!("✅ Topic {} successfully reopened!", topic_id);
-        true
-    } else {
-        eprintln!("❌ Failed to reopen topic: {}", response);
-        false
+    match client
+        .post(&url)
+        .header("Content-Type", "application/json")
+        .body(json_body)
+        .send()
+    {
+        Ok(resp) => {
+            if resp.status().is_success() {
+                println!("✅ Topic {} successfully reopened!", topic_id);
+                true
+            } else {
+                eprintln!(
+                    "❌ Failed to reopen topic: {}",
+                    resp.text().unwrap_or_default()
+                );
+                false
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ Network error reopening topic: {}", e);
+            false
+        }
     }
 }
 
