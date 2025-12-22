@@ -11,7 +11,11 @@ fn main() {
 
     let args: Vec<String> = env::args().collect();
     let topic_id = if args.len() > 1 { Some(&args[1]) } else { None };
-    let event_label = if args.len() > 2 { &args[2] } else { "New Yield (新产物)" };
+    let event_label = if args.len() > 2 {
+        &args[2]
+    } else {
+        "New Yield (新产物)"
+    };
 
     let repo = env::var("GITHUB_REPOSITORY").unwrap_or_default();
     let run_id = env::var("GITHUB_RUN_ID").unwrap_or_default();
@@ -59,12 +63,16 @@ fn main() {
     );
 
     let url = format!("https://api.telegram.org/bot{}/sendDocument", bot_token);
-    
+
     let mut curl_args = vec![
-        "-F".to_string(), format!("chat_id={}", chat_id),
-        "-F".to_string(), format!("document=@{}", file_path.display()),
-        "-F".to_string(), format!("caption={}", caption),
-        "-F".to_string(), "parse_mode=HTML".to_string(),
+        "-F".to_string(),
+        format!("chat_id={}", chat_id),
+        "-F".to_string(),
+        format!("document=@{}", file_path.display()),
+        "-F".to_string(),
+        format!("caption={}", caption),
+        "-F".to_string(),
+        "parse_mode=HTML".to_string(),
         url.clone(),
     ];
 
@@ -115,9 +123,7 @@ fn get_git_commit_message() -> String {
         .output();
 
     match output {
-        Ok(o) if o.status.success() => {
-            String::from_utf8_lossy(&o.stdout).trim().to_string()
-        },
+        Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).trim().to_string(),
         _ => "No commit message available.".to_string(),
     }
 }
@@ -126,7 +132,7 @@ fn run_curl(args: &[String]) -> (bool, String) {
     match Command::new("curl").args(["-s", "-S"]).args(args).output() {
         Ok(output) => (
             output.status.success(),
-            String::from_utf8_lossy(&output.stdout).to_string()
+            String::from_utf8_lossy(&output.stdout).to_string(),
         ),
         Err(e) => (false, e.to_string()),
     }
@@ -134,19 +140,25 @@ fn run_curl(args: &[String]) -> (bool, String) {
 
 fn reopen_topic(bot_token: &str, chat_id: &str, topic_id: &str) -> bool {
     let url = format!("https://api.telegram.org/bot{}/reopenForumTopic", bot_token);
-    let data = format!(r#"{{"chat_id": "{}", "message_thread_id": {}}}"#, chat_id, topic_id);
+    let data = format!(
+        r#"{{"chat_id": "{}", "message_thread_id": {}}}"#,
+        chat_id, topic_id
+    );
 
     println!("⚠️ Topic {} is closed. Attempting to reopen...", topic_id);
-    
+
     let args = vec![
-        "-H".to_string(), "Content-Type: application/json".to_string(),
-        "-d".to_string(), data,
-        "-X".to_string(), "POST".to_string(),
-        url
+        "-H".to_string(),
+        "Content-Type: application/json".to_string(),
+        "-d".to_string(),
+        data,
+        "-X".to_string(),
+        "POST".to_string(),
+        url,
     ];
 
     let (success, response) = run_curl(&args);
-    
+
     if success && response.contains("\"ok\":true") {
         println!("✅ Topic {} successfully reopened!", topic_id);
         true
@@ -157,9 +169,10 @@ fn reopen_topic(bot_token: &str, chat_id: &str, topic_id: &str) -> bool {
 }
 
 fn escape_html(input: &str) -> String {
-    input.replace('&', "&amp;")
-         .replace('<', "&lt;")
-         .replace('>', "&gt;")
-         .replace('"', "&quot;")
-         .replace('\'', "&#39;")
+    input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
 }
