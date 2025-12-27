@@ -1,6 +1,8 @@
-## v1.9.33
+## v1.9.4
 
-Changes since v1.9.32:
-* Fix(granary): correct state file path for backups and refactor mount parsing logic to utils
-* Refactor: centralize module ID extraction logic into utils to eliminate code duplication
-* Refactor(storage): remove duplicated unsafe SELinux logic and reuse utils implementation
+Changes since v1.9.33:
+* fix: make clippy happy
+* refactor(mount): sync overlayfs logic
+* fix(utils): sanitize SELinux contexts and fix null-terminator bugs
+* fix: make clippy happy
+* chore(release): bump version to v1.9.33 [skip ci]
