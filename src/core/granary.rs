@@ -14,7 +14,6 @@ use serde::{Deserialize, Serialize};
 use crate::{conf::config::Config, defs};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-
 pub struct Silo {
     pub id: String,
     pub timestamp: u64,

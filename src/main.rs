@@ -22,7 +22,6 @@ use conf::{
 use core::{OryzaEngine, executor, granary, inventory, planner, winnow};
 
 #[global_allocator]
-
 static GLOBAL: MiMalloc = MiMalloc;
 
 fn load_config(cli: &Cli) -> Result<Config> {

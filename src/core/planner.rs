@@ -19,7 +19,6 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-
 pub struct OverlayOperation {
     pub partition_name: String,
     pub target: String,
@@ -27,7 +26,6 @@ pub struct OverlayOperation {
 }
 
 #[derive(Debug, Default)]
-
 pub struct MountPlan {
     pub overlay_ops: Vec<OverlayOperation>,
     pub magic_module_paths: Vec<PathBuf>,
@@ -36,7 +34,6 @@ pub struct MountPlan {
 }
 
 #[derive(Debug, Clone, Serialize)]
-
 pub struct ConflictEntry {
     pub partition: String,
     pub relative_path: String,
@@ -44,7 +41,6 @@ pub struct ConflictEntry {
 }
 
 #[derive(Debug, Default)]
-
 pub struct ConflictReport {
     pub details: Vec<ConflictEntry>,
 }

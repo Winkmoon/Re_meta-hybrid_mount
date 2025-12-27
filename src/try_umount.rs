@@ -1,3 +1,6 @@
+// Copyright 2025 Meta-Hybrid Mount Authors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use std::{
     collections::HashSet,
     ffi::CString,
@@ -22,7 +25,6 @@ static DRIVER_FD: OnceLock<RawFd> = OnceLock::new();
 static SENT_UNMOUNTS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
 
 #[repr(C)]
-
 struct KsuAddTryUmount {
     arg: u64,
     flags: u32,
@@ -30,7 +32,6 @@ struct KsuAddTryUmount {
 }
 
 #[repr(C)]
-
 struct NukeExt4SysfsCmd {
     arg: u64,
 }
@@ -129,7 +130,6 @@ pub fn ksu_nuke_sysfs(target: &str) -> Result<()> {
 }
 
 #[cfg(not(any(target_os = "linux", target_os = "android")))]
-
 pub fn ksu_nuke_sysfs(_target: &str) -> Result<()> {
     bail!("Not supported on this OS")
 }

@@ -38,7 +38,6 @@ use extattr::{Flags as XattrFlags, lsetxattr};
 const SELINUX_XATTR: &str = "security.selinux";
 
 #[allow(dead_code)]
-
 const XATTR_TEST_FILE: &str = ".xattr_test";
 
 const DEFAULT_CONTEXT: &str = "u:object_r:system_file:s0";
@@ -173,7 +172,6 @@ pub fn lsetfilecon<P: AsRef<Path>>(path: P, con: &str) -> Result<()> {
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
-
 pub fn lgetfilecon<P: AsRef<Path>>(path: P) -> Result<String> {
     let con = extattr::lgetxattr(&path, SELINUX_XATTR).with_context(|| {
         format!(
@@ -186,7 +184,6 @@ pub fn lgetfilecon<P: AsRef<Path>>(path: P) -> Result<String> {
 }
 
 #[cfg(not(any(target_os = "linux", target_os = "android")))]
-
 pub fn lgetfilecon<P: AsRef<Path>>(_path: P) -> Result<String> {
     Ok(DEFAULT_CONTEXT.to_string())
 }
@@ -240,7 +237,6 @@ pub fn random_kworker_name() -> String {
 }
 
 #[allow(dead_code)]
-
 pub fn is_xattr_supported(path: &Path) -> bool {
     let test_file = path.join(XATTR_TEST_FILE);
 
@@ -501,7 +497,6 @@ pub fn select_temp_dir() -> Result<PathBuf> {
 }
 
 #[allow(dead_code)]
-
 pub fn cleanup_temp_dir(temp_dir: &Path) {
     if let Err(e) = remove_dir_all(temp_dir) {
         log::warn!(
@@ -513,7 +508,6 @@ pub fn cleanup_temp_dir(temp_dir: &Path) {
 }
 
 #[allow(dead_code)]
-
 pub fn ensure_temp_dir(temp_dir: &Path) -> Result<()> {
     if temp_dir.exists() {
         remove_dir_all(temp_dir).ok();

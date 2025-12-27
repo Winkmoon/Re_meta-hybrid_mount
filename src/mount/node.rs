@@ -11,7 +11,6 @@ use std::{
 use crate::core::modules::ModuleFile;
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug, Copy)]
-
 pub enum NodeFileType {
     RegularFile,
     Directory,
@@ -43,7 +42,6 @@ impl fmt::Display for NodeFileType {
 }
 
 #[derive(Clone)]
-
 pub struct Node {
     pub name: String,
     pub file_type: NodeFileType,

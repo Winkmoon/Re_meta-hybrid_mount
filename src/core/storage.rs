@@ -61,7 +61,6 @@ impl StorageHandle {
 }
 
 #[derive(Serialize)]
-
 struct StorageStatus {
     #[serde(rename = "type")]
     mode: String,
@@ -243,7 +242,6 @@ fn create_image(path: &Path, moduledir: &Path) -> Result<()> {
 }
 
 #[allow(dead_code)]
-
 pub fn finalize_storage_permissions(target: &Path) {
     if let Err(e) = rustix::fs::chmod(target, Mode::from(0o755)) {
         log::warn!("Failed to chmod storage root: {}", e);

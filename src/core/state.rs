@@ -13,7 +13,6 @@ use serde::{Deserialize, Serialize};
 use crate::defs;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
-
 pub struct RuntimeState {
     pub timestamp: u64,
     pub pid: u32,
@@ -36,7 +35,6 @@ pub struct RuntimeState {
 
 impl RuntimeState {
     #[allow(clippy::too_many_arguments)]
-
     pub fn new(
         storage_mode: String,
         mount_point: PathBuf,

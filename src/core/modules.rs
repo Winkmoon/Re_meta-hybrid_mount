@@ -22,7 +22,6 @@ use crate::{
 };
 
 #[derive(Default)]
-
 struct ModuleProp {
     name: String,
     version: String,
@@ -55,7 +54,6 @@ impl From<&Path> for ModuleProp {
 }
 
 #[derive(Serialize)]
-
 struct ModuleInfo {
     id: String,
     name: String,

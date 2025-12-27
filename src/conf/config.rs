@@ -13,7 +13,6 @@ use serde::{Deserialize, Serialize};
 pub const CONFIG_FILE_DEFAULT: &str = "/data/adb/meta-hybrid/config.toml";
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
-
 pub struct WinnowingTable {
     #[serde(flatten)]
     pub rules: HashMap<String, String>,
@@ -32,14 +31,12 @@ impl WinnowingTable {
     }
 
     #[allow(dead_code)]
-
     pub fn remove_rule(&mut self, file_path: &str) {
         self.rules.remove(file_path);
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-
 pub struct GranaryConfig {
     #[serde(default = "default_max_backups")]
     pub max_backups: usize,
@@ -65,7 +62,6 @@ impl Default for GranaryConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-
 pub struct Config {
     #[serde(default = "default_moduledir")]
     pub moduledir: PathBuf,
@@ -106,7 +102,6 @@ where
 {
     #[derive(Deserialize)]
     #[serde(untagged)]
-
     enum StringOrVec {
         String(String),
         Vec(Vec<String>),

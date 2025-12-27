@@ -15,7 +15,6 @@ use crate::{conf::config, defs};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
-
 pub enum MountMode {
     #[default]
     Overlay,
@@ -24,7 +23,6 @@ pub enum MountMode {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-
 pub struct ModuleRules {
     #[serde(default)]
     pub default_mode: MountMode,
@@ -79,7 +77,6 @@ impl ModuleRules {
 }
 
 #[derive(Debug, Clone)]
-
 pub struct Module {
     pub id: String,
     pub source_path: PathBuf,
@@ -104,7 +101,6 @@ pub fn scan(source_dir: &Path, _config: &config::Config) -> Result<Vec<Module>> 
 
             let id = entry.file_name().to_string_lossy().to_string();
 
-            // Centralized ignore list for system directories
             if matches!(
                 id.as_str(),
                 "meta-hybrid" | "lost+found" | ".git" | ".idea" | ".vscode"

@@ -16,7 +16,6 @@ use crate::{
 };
 
 #[derive(Serialize)]
-
 struct DiagnosticIssueJson {
     level: String,
     context: String,

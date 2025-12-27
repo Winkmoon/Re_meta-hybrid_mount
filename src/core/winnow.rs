@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use crate::{conf::config::WinnowingTable, core::planner::ConflictEntry};
 
 #[derive(Debug, Serialize, Deserialize)]
-
 pub struct ChaffConflict {
     pub path: PathBuf,
     pub contenders: Vec<String>,
