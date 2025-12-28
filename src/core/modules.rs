@@ -12,6 +12,9 @@ use std::{
 use anyhow::Result;
 use serde::Serialize;
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
+use extattr::lgetxattr;
+
 use crate::{
     conf::config::Config,
     core::{
@@ -107,7 +110,20 @@ impl ModuleFile {
 
         let is_whiteout = file_type.is_char_device() && metadata.rdev() == 0;
 
-        let is_replace = file_type.is_dir() && real_path.join(defs::REPLACE_DIR_FILE_NAME).exists();
+        let check_replace = || -> bool {
+            if real_path.join(defs::REPLACE_DIR_FILE_NAME).exists() {
+                return true;
+            }
+
+            #[cfg(any(target_os = "linux", target_os = "android"))]
+            if let Ok(val) = lgetxattr(&real_path, defs::REPLACE_DIR_XATTR) {
+                return String::from_utf8_lossy(&val) == "y";
+            }
+
+            false
+        };
+
+        let is_replace = file_type.is_dir() && check_replace();
 
         let is_replace_file = real_path
             .file_name()
