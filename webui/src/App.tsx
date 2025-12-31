@@ -1,8 +1,3 @@
-/**
- * Copyright 2025 Meta-Hybrid Mount Authors
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 import { createSignal, createMemo, createEffect, onMount, Show } from 'solid-js';
 import { store } from './lib/store';
 import TopBar from './components/TopBar.tsx';
@@ -135,7 +130,7 @@ export default function App() {
             style={{
                 transform: `translateX(calc(${baseTranslateX()}% + ${dragOffset()}px))`,
                 width: `${visibleTabs().length * 100}%`,
-                transition: isDragging() ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.8, 0.5, 1)'
+                transition: isDragging() ? 'none' : 'transform 0.4s cubic-bezier(0.2, 1, 0.2, 1)'
             }}
           >
             <div class="swipe-page" style={{ width: `${100 / visibleTabs().length}%` }}><div class="page-scroller"><StatusTab /></div></div>

@@ -1,6 +1,7 @@
 import { createSignal, createEffect, createMemo, Show, For } from 'solid-js';
 import { store } from '../lib/store';
 import { ICONS } from '../lib/constants';
+import { API } from '../lib/api';
 import ChipInput from '../components/ChipInput';
 import BottomActions from '../components/BottomActions';
 import './ConfigTab.css';
@@ -82,6 +83,7 @@ export default function ConfigTab() {
   function toggle(key: keyof AppConfig) {
     // @ts-ignore
     const currentVal = store.config[key] as boolean;
+    const newVal = !currentVal;
 
     if (key === 'disable_umount') {
        if (store.systemInfo?.zygisksuEnforce && store.systemInfo.zygisksuEnforce !== '0' && !store.config.allow_umount_coexistence) {
@@ -89,7 +91,13 @@ export default function ConfigTab() {
           return;
        }
     }
-    updateConfig(key, !currentVal);
+    
+    updateConfig(key, newVal);
+    
+    API.saveConfig({ ...store.config, [key]: newVal }).catch(() => {
+        updateConfig(key, currentVal);
+        store.showToast(store.L.config?.saveFailed || "Failed to update setting", "error");
+    });
   }
 
   function setOverlayMode(mode: string) {

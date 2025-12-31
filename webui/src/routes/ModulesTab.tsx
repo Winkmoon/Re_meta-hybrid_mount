@@ -10,6 +10,14 @@ import '@material/web/iconbutton/filled-tonal-icon-button.js';
 import '@material/web/button/filled-button.js';
 import '@material/web/icon/icon.js';
 
+declare module "solid-js" {
+  namespace JSX {
+    interface Directives {
+      style?: any;
+    }
+  }
+}
+
 export default function ModulesTab() {
   const [searchQuery, setSearchQuery] = createSignal('');
   const [filterType, setFilterType] = createSignal('all');
@@ -276,9 +284,10 @@ export default function ModulesTab() {
         }>
           <div class="rules-list">
             <For each={filteredModules()}>
-              {(mod) => (
+              {(mod, i) => (
                 <div 
                   class={`rule-card ${expandedId() === mod.id ? 'expanded' : ''} ${initialRulesSnapshot()[mod.id] !== JSON.stringify(mod.rules) ? 'dirty' : ''} ${!mod.is_mounted ? 'unmounted' : ''}`}
+                  style={{ "--i": i() }}
                 >
                   <div 
                       class="rule-main"
@@ -300,79 +309,81 @@ export default function ModulesTab() {
                     </div>
                   </div>
                   
-                  <Show when={expandedId() === mod.id}>
-                    <div class="rule-details">
-                      <p class="module-desc">{mod.description || (store.L.modules?.noDesc ?? 'No description')}</p>
-                      <p class="module-meta">{store.L.modules?.author ?? 'Author'}: {mod.author || (store.L.modules?.unknown ?? 'Unknown')}</p>
-                      
-                      <Show when={!mod.is_mounted}>
-                            <div class="status-alert">
-                              <svg viewBox="0 0 24 24" width="16" height="16"><path d={ICONS.info} fill="currentColor"/></svg>
-                              <span>This module is currently not mounted.</span>
+                  <div class={`rule-details-wrapper ${expandedId() === mod.id ? 'open' : ''}`}>
+                    <div class="rule-details-inner">
+                      <div class="rule-details">
+                        <p class="module-desc">{mod.description || (store.L.modules?.noDesc ?? 'No description')}</p>
+                        <p class="module-meta">{store.L.modules?.author ?? 'Author'}: {mod.author || (store.L.modules?.unknown ?? 'Unknown')}</p>
+                        
+                        <Show when={!mod.is_mounted}>
+                              <div class="status-alert">
+                                <svg viewBox="0 0 24 24" width="16" height="16"><path d={ICONS.info} fill="currentColor"/></svg>
+                                <span>This module is currently not mounted.</span>
+                            </div>
+                        </Show>
+                  
+                        <div class="config-section">
+                          <div class="config-row">
+                            <span class="config-label">{store.L.modules?.defaultMode ?? 'Default Strategy'}:</span>
+                            <div class="text-field compact-select">
+                              <select 
+                                value={mod.rules.default_mode}
+                                onChange={(e) => updateDefaultMode(mod, e.currentTarget.value as MountMode)}
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label="Default Strategy"
+                              >
+                                <option value="overlay">{store.L.modules?.modes?.auto ?? 'OverlayFS (Auto)'}</option>
+                                <option value="magic">{store.L.modules?.modes?.magic ?? 'Magic Mount'}</option>
+                                <option value="ignore">{store.L.modules?.modes?.ignore ?? 'Disable (Ignore)'}</option>
+                              </select>
+                            </div>
                           </div>
-                      </Show>
-                
-                      <div class="config-section">
-                        <div class="config-row">
-                          <span class="config-label">{store.L.modules?.defaultMode ?? 'Default Strategy'}:</span>
-                          <div class="text-field compact-select">
-                            <select 
-                              value={mod.rules.default_mode}
-                              onChange={(e) => updateDefaultMode(mod, e.currentTarget.value as MountMode)}
-                              onClick={(e) => e.stopPropagation()}
-                              aria-label="Default Strategy"
-                            >
-                              <option value="overlay">{store.L.modules?.modes?.auto ?? 'OverlayFS (Auto)'}</option>
-                              <option value="magic">{store.L.modules?.modes?.magic ?? 'Magic Mount'}</option>
-                              <option value="ignore">{store.L.modules?.modes?.ignore ?? 'Disable (Ignore)'}</option>
-                            </select>
-                          </div>
-                        </div>
 
-                        <div class="paths-editor">
-                           <div class="paths-header">
-                               <span class="config-label">{store.L.modules?.pathRules ?? 'Path Overrides'}:</span>
-                               <button class="btn-icon add-rule" onClick={() => addPathRule(mod)} title={store.L.modules?.addRule ?? 'Add Rule'}>
-                                   <svg viewBox="0 0 24 24" width="20" height="20"><path d={ICONS.add} fill="currentColor"/></svg>
-                               </button>
-                           </div>
-                           
-                           <Show when={mod.rules.paths && Object.keys(mod.rules.paths).length > 0} fallback={
-                              <div class="empty-paths">{store.L.modules?.noRules ?? 'No path overrides defined.'}</div>
-                           }>
-                               <div class="path-list">
-                                  <For each={Object.entries(mod.rules.paths)}>
-                                    {([path, mode]) => (
-                                      <div class="path-row">
-                                          <input 
-                                              type="text" 
-                                              class="path-input" 
-                                              value={path} 
-                                              onChange={(e) => updatePathKey(mod, path, e.currentTarget.value)}
-                                              placeholder={store.L.modules?.placeholder ?? "e.g. system/fonts"}
-                                          />
-                                          <select 
-                                              class="path-mode-select"
-                                              value={mode}
-                                              onChange={(e) => updatePathMode(mod, path, e.currentTarget.value as MountMode)}
-                                              aria-label="Path Mode"
-                                          >
-                                              <option value="overlay">{store.L.modules?.modes?.short?.auto ?? 'Overlay'}</option>
-                                              <option value="magic">{store.L.modules?.modes?.short?.magic ?? 'Magic'}</option>
-                                              <option value="ignore">{store.L.modules?.modes?.short?.ignore ?? 'Ignore'}</option>
-                                          </select>
-                                          <button class="btn-icon delete" onClick={() => removePathRule(mod, path)} title="Remove rule">
-                                              <svg viewBox="0 0 24 24" width="18" height="18"><path d={ICONS.delete} fill="currentColor"/></svg>
-                                          </button>
-                                      </div>
-                                    )}
-                                  </For>
-                               </div>
-                           </Show>
+                          <div class="paths-editor">
+                            <div class="paths-header">
+                                <span class="config-label">{store.L.modules?.pathRules ?? 'Path Overrides'}:</span>
+                                <button class="btn-icon add-rule" onClick={() => addPathRule(mod)} title={store.L.modules?.addRule ?? 'Add Rule'}>
+                                    <svg viewBox="0 0 24 24" width="20" height="20"><path d={ICONS.add} fill="currentColor"/></svg>
+                                </button>
+                            </div>
+                            
+                            <Show when={mod.rules.paths && Object.keys(mod.rules.paths).length > 0} fallback={
+                                <div class="empty-paths">{store.L.modules?.noRules ?? 'No path overrides defined.'}</div>
+                            }>
+                                <div class="path-list">
+                                    <For each={Object.entries(mod.rules.paths)}>
+                                      {([path, mode]) => (
+                                        <div class="path-row">
+                                            <input 
+                                                type="text" 
+                                                class="path-input" 
+                                                value={path} 
+                                                onChange={(e) => updatePathKey(mod, path, e.currentTarget.value)}
+                                                placeholder={store.L.modules?.placeholder ?? "e.g. system/fonts"}
+                                            />
+                                            <select 
+                                                class="path-mode-select"
+                                                value={mode}
+                                                onChange={(e) => updatePathMode(mod, path, e.currentTarget.value as MountMode)}
+                                                aria-label="Path Mode"
+                                            >
+                                                <option value="overlay">{store.L.modules?.modes?.short?.auto ?? 'Overlay'}</option>
+                                                <option value="magic">{store.L.modules?.modes?.short?.magic ?? 'Magic'}</option>
+                                                <option value="ignore">{store.L.modules?.modes?.short?.ignore ?? 'Ignore'}</option>
+                                            </select>
+                                            <button class="btn-icon delete" onClick={() => removePathRule(mod, path)} title="Remove rule">
+                                                <svg viewBox="0 0 24 24" width="18" height="18"><path d={ICONS.delete} fill="currentColor"/></svg>
+                                            </button>
+                                        </div>
+                                      )}
+                                    </For>
+                                </div>
+                            </Show>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </Show>
+                  </div>
                 </div>
               )}
             </For>
