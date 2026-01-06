@@ -127,6 +127,7 @@ fn bind_mount_at(
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn bind_mount(
     from: impl AsRef<Path>,
     to: impl AsRef<Path>,

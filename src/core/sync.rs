@@ -63,6 +63,7 @@ pub fn perform_sync(modules: &[Module], target_base: &Path) -> Result<()> {
 
 fn apply_overlay_opaque_flags(root: &Path) -> Result<()> {
     for entry in WalkDir::new(root).min_depth(1).into_iter().flatten() {
+        #[allow(clippy::collapsible_if)]
         if entry.file_type().is_file() && entry.file_name() == defs::REPLACE_DIR_FILE_NAME {
             if let Some(parent) = entry.path().parent() {
                 utils::set_overlay_opaque(parent)?;
