@@ -1,6 +1,3 @@
-// Copyright 2025 Meta-Hybrid Mount Authors
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -62,6 +59,7 @@ struct StorageStatus {
     usage_percent: u8,
     total_size: u64,
     used_size: u64,
+    supported_modes: Vec<String>,
 }
 
 pub fn get_usage(path: &Path) -> (u64, u64, u8) {
@@ -146,9 +144,13 @@ pub fn setup(
 
 fn try_setup_tmpfs(target: &Path, mount_source: &str) -> Result<bool> {
     if utils::mount_tmpfs(target, mount_source).is_ok() {
-        if utils::is_overlay_xattr_supported(target).is_ok() {
+        if utils::is_overlay_xattr_supported(target) {
+            log::info!("Tmpfs mounted and supports xattrs (CONFIG_TMPFS_XATTR=y).");
             return Ok(true);
         } else {
+            log::warn!("Tmpfs mounted but XATTRs (trusted.*) are NOT supported.");
+            log::warn!(">> Your kernel likely lacks CONFIG_TMPFS_XATTR=y.");
+            log::warn!(">> Falling back to legacy Ext4 image mode.");
             let _ = unmount(target, UnmountFlags::DETACH);
         }
     }
@@ -238,12 +240,23 @@ pub fn print_status() -> Result<()> {
         }
     }
 
+    let mut supported_modes = vec!["ext4".to_string(), "erofs".to_string()];
+    let check_dir = Path::new("/data/local/tmp/.mh_xattr_chk");
+    if utils::mount_tmpfs(check_dir, "mh_check").is_ok() {
+        if utils::is_overlay_xattr_supported(check_dir) {
+            supported_modes.insert(0, "tmpfs".to_string());
+        }
+        let _ = unmount(check_dir, UnmountFlags::DETACH);
+        let _ = fs::remove_dir(check_dir);
+    }
+
     let status = StorageStatus {
         mode,
         mount_point: mnt_base.to_string_lossy().to_string(),
         usage_percent: percent,
         total_size: total,
         used_size: used,
+        supported_modes,
     };
 
     println!("{}", serde_json::to_string(&status)?);

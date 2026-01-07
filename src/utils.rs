@@ -1,6 +1,3 @@
-// Copyright 2025 Meta-Hybrid Mount Authors
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{
     ffi::CString,
     fmt as std_fmt,
@@ -323,27 +320,43 @@ pub fn is_xattr_supported(path: &Path) -> bool {
     supported
 }
 
-pub fn is_overlay_xattr_supported(path: &Path) -> Result<()> {
+pub fn is_overlay_xattr_supported(path: &Path) -> bool {
     let test_file = path.join(".overlay_xattr_test");
     if let Err(e) = write(&test_file, b"test") {
         log::debug!("XATTR Check: Failed to create test file: {}", e);
-        return Ok(());
+        return false;
     }
 
-    // Attempt to set a dummy xattr to test support
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    if let Err(e) = rustix::fs::setxattr(
-        &test_file,
-        OVERLAY_TEST_XATTR,
-        b"y",
-        rustix::fs::XattrFlags::empty(),
-    ) {
-        log::debug!("Overlay XATTR test failed: {}", e);
-        // Don't bail, just log
-    }
+    let c_path = match CString::new(test_file.as_os_str().as_encoded_bytes()) {
+        Ok(c) => c,
+        Err(_) => {
+            let _ = remove_file(&test_file);
+            return false;
+        }
+    };
+
+    let c_key = CString::new(OVERLAY_TEST_XATTR).unwrap();
+    let c_val = CString::new("y").unwrap();
+
+    let supported = unsafe {
+        let ret = libc::lsetxattr(
+            c_path.as_ptr(),
+            c_key.as_ptr(),
+            c_val.as_ptr() as *const libc::c_void,
+            c_val.as_bytes().len(),
+            0,
+        );
+        if ret != 0 {
+            let err = std::io::Error::last_os_error();
+            log::debug!("XATTR Check: trusted.* xattr not supported: {}", err);
+            false
+        } else {
+            true
+        }
+    };
 
     let _ = remove_file(test_file);
-    Ok(())
+    supported
 }
 
 pub fn is_mounted<P: AsRef<Path>>(path: P) -> bool {
@@ -387,7 +400,6 @@ pub fn mount_image(image_path: &Path, target: &Path) -> Result<()> {
     ensure_dir_exists(target)?;
     lsetfilecon(image_path, "u:object_r:ksu_file:s0").ok();
 
-    // Using explicit mount command due to potential loop device setup complexity
     let status = Command::new("mount")
         .args(["-t", "ext4", "-o", "loop,rw,noatime"])
         .arg(image_path)
