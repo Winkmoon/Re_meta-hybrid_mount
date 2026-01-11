@@ -12,7 +12,11 @@ use serde::Serialize;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use crate::try_umount::send_unmountable;
-use crate::{core::state::RuntimeState, utils};
+use crate::{
+    core::state::RuntimeState,
+    mount::overlayfs::{overlayfs, utils as overlay_utils},
+    utils,
+};
 
 const DEFAULT_SELINUX_CONTEXT: &str = "u:object_r:system_file:s0";
 
@@ -108,7 +112,7 @@ pub fn setup(
     if use_erofs && utils::is_erofs_supported() {
         let erofs_path = img_path.with_extension("erofs");
 
-        utils::mount_tmpfs(mnt_base, mount_source)?;
+        overlayfs::mount_tmpfs(mnt_base)?;
 
         try_hide(mnt_base);
 
@@ -119,7 +123,7 @@ pub fn setup(
         });
     }
 
-    if !force_ext4 && try_setup_tmpfs(mnt_base, mount_source)? {
+    if !force_ext4 && try_setup_tmpfs(mnt_base)? {
         try_hide(mnt_base);
 
         let erofs_path = img_path.with_extension("erofs");
@@ -142,8 +146,8 @@ pub fn setup(
     Ok(handle)
 }
 
-fn try_setup_tmpfs(target: &Path, mount_source: &str) -> Result<bool> {
-    if utils::mount_tmpfs(target, mount_source).is_ok() {
+fn try_setup_tmpfs(target: &Path) -> Result<bool> {
+    if overlayfs::mount_tmpfs(target).is_ok() {
         if utils::is_overlay_xattr_supported(target) {
             tracing::info!("Tmpfs mounted and supports xattrs (CONFIG_TMPFS_XATTR=y).");
             return Ok(true);
@@ -166,10 +170,16 @@ fn setup_ext4_image(target: &Path, img_path: &Path) -> Result<StorageHandle> {
         );
     }
 
-    if utils::mount_image(img_path, target).is_err() {
+    utils::lsetfilecon(img_path, "u:object_r:ksu_file:s0").ok();
+
+    let src = img_path.to_string_lossy();
+    let tgt = target.to_string_lossy();
+
+    if overlay_utils::AutoMountExt4::try_new(&src, &tgt, false).is_err() {
         if utils::repair_image(img_path).is_ok() {
-            utils::mount_image(img_path, target)
-                .context("Failed to mount modules.img after repair")?;
+            overlay_utils::AutoMountExt4::try_new(&src, &tgt, false)
+                .context("Failed to mount modules.img after repair")
+                .map(|_| ())?;
         } else {
             bail!("Failed to repair modules.img");
         }
