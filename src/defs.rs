@@ -9,13 +9,7 @@ pub const SKIP_MOUNT_FILE_NAME: &str = "skip_mount";
 pub const SYSTEM_RW_DIR: &str = "/data/adb/meta-hybrid/rw";
 pub const MODULE_PROP_FILE: &str = "/data/adb/modules/meta-hybrid/module.prop";
 pub const MODULES_DIR: &str = "/data/adb/modules";
-pub const BUILTIN_PARTITIONS: &[&str] = &[
-    "system",
-    "vendor",
-    "product",
-    "system_ext",
-    "odm",
-    "oem",
-];
+pub const BUILTIN_PARTITIONS: &[&str] =
+    &["system", "vendor", "product", "system_ext", "odm", "oem"];
 pub const REPLACE_DIR_FILE_NAME: &str = ".replace";
 pub const REPLACE_DIR_XATTR: &str = "trusted.overlay.opaque";

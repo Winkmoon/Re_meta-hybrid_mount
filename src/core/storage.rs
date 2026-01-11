@@ -8,7 +8,7 @@ use anyhow::{Context, Result, bail, ensure};
 use jwalk::WalkDir;
 use rustix::{
     fs::Mode,
-    mount::{UnmountFlags, unmount},
+    mount::{MountPropagationFlags, UnmountFlags, mount_change, unmount},
 };
 use serde::Serialize;
 
@@ -40,6 +40,10 @@ impl StorageHandle {
 
             utils::mount_erofs_image(image_path, &self.mount_point)
                 .context("Failed to mount finalized EROFS image")?;
+
+            if let Err(e) = mount_change(&self.mount_point, MountPropagationFlags::PRIVATE) {
+                tracing::warn!("Failed to make EROFS storage private: {}", e);
+            }
 
             #[cfg(any(target_os = "linux", target_os = "android"))]
             if !disable_umount {
@@ -139,10 +143,18 @@ pub fn setup(
         let _ = path;
     };
 
+    let make_private = |path: &Path| {
+        if let Err(e) = mount_change(path, MountPropagationFlags::PRIVATE) {
+            tracing::warn!("Failed to make storage private: {}", e);
+        }
+    };
+
     if use_erofs && utils::is_erofs_supported() {
         let erofs_path = img_path.with_extension("erofs");
 
         utils::mount_tmpfs(mnt_base, mount_source)?;
+
+        make_private(mnt_base);
 
         try_hide(mnt_base);
 
@@ -154,6 +166,8 @@ pub fn setup(
     }
 
     if !force_ext4 && try_setup_tmpfs(mnt_base, mount_source)? {
+        make_private(mnt_base);
+
         try_hide(mnt_base);
 
         let erofs_path = img_path.with_extension("erofs");
@@ -170,6 +184,8 @@ pub fn setup(
     }
 
     let handle = setup_ext4_image(mnt_base, img_path, moduledir)?;
+
+    make_private(mnt_base);
 
     try_hide(mnt_base);
 
