@@ -217,8 +217,7 @@ fn main() -> Result<()> {
         .with_context(|| format!("Failed to create run directory: {}", defs::RUN_DIR))?;
 
     let mnt_base = PathBuf::from(&config.hybrid_mnt_dir);
-
-    let img_path = Path::new(defs::BASE_DIR).join("modules.img");
+    let img_path = PathBuf::from(defs::MODULES_IMG_FILE);
 
     if let Err(e) = granary::create_silo(&config, "Boot Backup", "Automatic Pre-Mount") {
         tracing::warn!("Granary: Failed to create boot snapshot: {}", e);

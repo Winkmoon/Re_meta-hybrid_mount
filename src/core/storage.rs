@@ -214,9 +214,10 @@ fn try_setup_tmpfs(target: &Path, mount_source: &str) -> Result<bool> {
 fn setup_ext4_image(target: &Path, img_path: &Path, moduledir: &Path) -> Result<StorageHandle> {
     if !img_path.exists() || check_image(img_path).is_err() {
         tracing::info!("Modules image missing or corrupted. Fallback to creation.");
-
-        if let Err(e) = utils::ensure_clean_dir(moduledir) {
-            tracing::warn!("Failed to clean moduledir: {}", e);
+        if img_path.exists() {
+            if let Err(e) = fs::remove_file(img_path) {
+                tracing::warn!("Failed to remove old image: {}", e);
+            }
         }
 
         tracing::info!("- Preparing image");
@@ -267,7 +268,6 @@ fn setup_ext4_image(target: &Path, img_path: &Path, moduledir: &Path) -> Result<
 
     tracing::info!("mounted {} to {}", img_path.display(), target.display());
 
-    // Ensure correct context for all files in the mounted image
     for dir_entry in WalkDir::new(target).parallelism(jwalk::Parallelism::Serial) {
         if let Some(path) = dir_entry.ok().map(|dir_entry| dir_entry.path()) {
             let _ = utils::lsetfilecon(&path, DEFAULT_SELINUX_CONTEXT);
