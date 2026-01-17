@@ -1,6 +1,3 @@
-// Copyright 2025 Meta-Hybrid Mount Authors
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{
     ffi::CString,
     fs::{self, File, create_dir_all, remove_dir_all, remove_file, write},
@@ -414,7 +411,7 @@ fn make_device_node(path: &Path, mode: u32, rdev: u64) -> Result<()> {
     let c_path = CString::new(path.as_os_str().as_encoded_bytes())?;
     let dev = rdev as libc::dev_t;
     unsafe {
-        if libc::mknod(c_path.as_ptr(), mode, dev) != 0 {
+        if libc::mknod(c_path.as_ptr(), mode as libc::mode_t, dev) != 0 {
             let err = std::io::Error::last_os_error();
             bail!("mknod failed for {}: {}", path.display(), err);
         }
