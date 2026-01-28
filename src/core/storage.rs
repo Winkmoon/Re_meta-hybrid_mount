@@ -7,10 +7,7 @@ use std::{
 
 use anyhow::{Context, Result, bail, ensure};
 use jwalk::WalkDir;
-use rustix::{
-    fs::Mode,
-    mount::{MountPropagationFlags, UnmountFlags, mount_change, unmount as umount},
-};
+use rustix::mount::{MountPropagationFlags, UnmountFlags, mount_change, unmount as umount};
 use serde::Serialize;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -19,6 +16,7 @@ use crate::{
     core::state::RuntimeState,
     defs,
     mount::overlayfs::utils as overlay_utils,
+    sys::mount::is_mounted,
     utils::{self, ensure_dir_exists, lsetfilecon},
 };
 
@@ -131,7 +129,7 @@ pub fn setup(
     mount_source: &str,
     disable_umount: bool,
 ) -> Result<StorageHandle> {
-    if utils::is_mounted(mnt_base) {
+    if is_mounted(mnt_base) {
         let _ = umount(mnt_base, UnmountFlags::DETACH);
     }
 
@@ -283,7 +281,7 @@ pub fn print_status() -> Result<()> {
 
     let mut percent = 0;
 
-    if utils::is_mounted(&mnt_base)
+    if is_mounted(&mnt_base)
         && let Ok(stat) = rustix::fs::statvfs(&mnt_base)
     {
         mode = if expected_mode != "unknown" {

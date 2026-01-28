@@ -3,10 +3,7 @@ use std::{
     ffi::CString,
     fs::{self, File, OpenOptions},
     io::Write,
-    os::unix::{
-        ffi::OsStrExt,
-        fs::{FileTypeExt, MetadataExt, PermissionsExt, symlink},
-    },
+    os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt, symlink},
     path::Path,
     time::{SystemTime, UNIX_EPOCH},
 };
