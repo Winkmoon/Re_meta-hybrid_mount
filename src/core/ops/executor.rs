@@ -100,7 +100,17 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
             tempdir.display()
         );
 
-        if !tempdir.exists() {
+        if matches!(config.overlay_mode, config::OverlayMode::Erofs) {
+            if tempdir.exists() {
+                crate::sys::mount::mount_tmpfs(&tempdir, "magic_ws")?;
+                #[cfg(any(target_os = "linux", target_os = "android"))]
+                if let Err(e) = umount_mgr::send_umountable(&tempdir) {
+                    log::warn!("Failed to schedule unmount for magic_ws: {}", e);
+                }
+            } else {
+                log::error!("Magic Mount anchor missing in EROFS image!");
+            }
+        } else if !tempdir.exists() {
             std::fs::create_dir_all(&tempdir)?;
         }
 
