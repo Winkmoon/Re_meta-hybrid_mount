@@ -134,6 +134,7 @@ const createGlobalStore = () => {
 
   function setTheme(t: "auto" | "light" | "dark") {
     setThemeSignal(t);
+    localStorage.setItem("theme", t);
   }
 
   function setThemeStyle(s: ThemeStyle) {
@@ -188,6 +189,9 @@ const createGlobalStore = () => {
     const savedLang = localStorage.getItem("lang") || "en-US";
     setLangSignal(savedLang);
     await loadLocale(savedLang);
+
+    const savedTheme = localStorage.getItem("theme") as "auto" | "light" | "dark" || "auto";
+    setThemeSignal(savedTheme);
 
     setFixBottomNavSignal(localStorage.getItem("hm_fix_bottom_nav") === "true");
 
