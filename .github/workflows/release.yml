@@ -129,12 +129,13 @@ jobs:
 
       - name: Create Release (Local)
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
           draft: false
           prerelease: false
           files: ${{ env.ZIP_PATH }}
           body_path: /tmp/changelog.md
+          tag_name: ${{ env.META_HYBRID_VERSION }}
+          name: Meta-Hybrid ${{ env.META_HYBRID_VERSION }}
 
 
 
