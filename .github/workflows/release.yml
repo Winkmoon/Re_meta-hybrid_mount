@@ -92,13 +92,7 @@ jobs:
         run: |
           cargo xtask build --release
 
-      - name: Notify Telegram (Release)
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          chmod +x notify
-          ./notify "6" "丰收 (Harvest)"
+
 
       - name: Generate Changelog
         id: meta
@@ -142,17 +136,7 @@ jobs:
           files: ${{ env.ZIP_PATH }}
           body_path: /tmp/changelog.md
 
-      - name: Create Remote Release (KernelSU-Repo)
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          token: ${{ secrets.RELEASE_TOKEN }}
-          repository: KernelSU-Modules-Repo/meta-hybrid
-          tag_name: ${{ env.META_HYBRID_VERSION }}
-          draft: false
-          prerelease: false
-          files: ${{ env.ZIP_PATH }}
-          body_path: /tmp/changelog.md
+
 
       - name: Commit and Push Changes
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
