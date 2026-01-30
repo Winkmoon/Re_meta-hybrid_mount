@@ -1,7 +1,7 @@
 id=meta-hybrid
 metamodule=1
 name=Re_Hybrid Mount
-version=v1.0.0
-versionCode=test
+version=v1.0.1
+versionCode=Dev
 author=YuzakiKokuban,Winkmoon(Xinran)
 description=Waiting for daemon...
