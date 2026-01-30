@@ -177,7 +177,7 @@ pub fn update_description(storage_mode: &str, overlay_count: usize, magic_count:
     let mode_str = match storage_mode {
         "tmpfs" => "Tmpfs",
         "erofs" => "EROFS",
-        _ => "Ext4",
+        _ => "EXT4",
     };
 
     let status_emoji = match storage_mode {
@@ -187,7 +187,7 @@ pub fn update_description(storage_mode: &str, overlay_count: usize, magic_count:
     };
 
     let desc_text = format!(
-        "description=😋 运行中喵～ ({}) {} | Overlay: {} | Magic: {}",
+        "description=😋 运行中 ({}) {} | Overlay: {} | Magic: {}",
         mode_str, status_emoji, overlay_count, magic_count
     );
 
