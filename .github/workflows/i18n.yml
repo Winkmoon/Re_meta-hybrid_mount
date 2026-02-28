@@ -6,9 +6,7 @@ on:
       - webui/src/locales/*
     branches:
       - dev
-  workflow_dispatch:
-  schedule:
-    - cron: '0 */6 * * *'
+
 
 permissions:
   contents: write
